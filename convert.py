@@ -11,7 +11,7 @@ def processFLV(path): #用ffmpeg解码
 	path2 = '/var/video/convert/'+convt_file+'.flv'
 	args = ['ffmpeg', '-i', path, '-ab', '64', '-ac', '2', '-ar', '22050',  '-r', '29.97', '-y', path2]
 	print ' '.join(args)
-	exit()
+#	exit()
 	p = subprocess.check_call(args)
 	return path2
 def check_type(path): #检查文件的视频属性 ,如果是ffmpeg不支持的格式要用mencoder来解码
