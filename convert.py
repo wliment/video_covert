@@ -4,7 +4,7 @@ import MySQLdb
 import subprocess
 import os.path
 import hashlib
-def processFLV(path):
+def processFLV(path): #用ffmpeg解码
 	tmp = os.path.basename(path)
 	tmp = tmp.split('.')
 	convt_file = tmp[0]
