@@ -21,7 +21,7 @@ def check_type(path): #检查文件的视频属性 ,如果是ffmpeg不支持的�
 	type0=['flv']
 	type1 = ['mpg','wmv','3gp','mov','mp4','asf','mkv']
 	type2 = ['wmv9','rm','rmvb'] 
-	if tmp_tpye in type0:# 如果上床的视频已经是flv格式,则不用再次转换
+	if tmp_tpye in type0:# 如果上传的视频已经是flv格式,则不用再次转换
 		return 0
 	elif tmp_type in type1:
 		return 1
@@ -37,6 +37,17 @@ def processAVI(path): #调用mencoder把视频转还为avi
 	args=['mencoder','oac','lavc','-lavcopts','acodec=mp3:abitrate=64','-ovc','xvid','-xvidencopts','bitrate=600','-of','avi','-o',path2]
 	p = subprocess.check_call(args)
 	return path2
+
+def checkbps(path): #查看视频的码率
+	p = subprocess.Popen(['mediainfo','-f',path],stdout = subprocess.PIPE)
+	p2 = subprocess.Popen(['grep','Bit rate'],stdin = p.stdout,stdout = subprocess.PIPE)
+	p3 = subprocess.Popen('head -n 1',shell = True,stdin = p2.stdout,stdout = subprocess.PIPE)
+	#args 参数shell = True 无法运行
+	output = p3.communicate()[0]
+	kbps = int(output.split(':')[1].strip())
+	return kbps/1000 #因为返回的结果单位不为K 
+	
+
 
 conn=MySQLdb.connect(host="localhost",user="root",passwd="wukong",db="video")
 cursor = conn.cursor()
