@@ -4,6 +4,8 @@ import MySQLdb
 import subprocess
 import os.path
 import hashlib
+import mkv,rmvb
+
 def processFLV(path): #用ffmpeg解码
 	tmp = os.path.basename(path)
 	tmp = tmp.split('.')
@@ -14,6 +16,7 @@ def processFLV(path): #用ffmpeg解码
 #	exit()
 	p = subprocess.check_call(args)
 	return path2
+	
 def check_type(path): #检查文件的视频属性 ,如果是ffmpeg不支持的格式要用mencoder来解码
 	tmp = os.path.basename(path)
 	tmp = tmp.sqlist('.')
@@ -29,12 +32,13 @@ def check_type(path): #检查文件的视频属性 ,如果是ffmpeg不支持的�
 		return 2
 	else:                   # 不支持的格式
 		return 3
+
 def processAVI(path): #调用mencoder把视频转还为avi
 	tmp = os.path.basename(path)
 	tmp = tmp.split('.')
 	convt_file = tmp[0]
 	path2 = '/var/video/convert/'+convt_file+'.avi'
-	args=['mencoder','oac','lavc','-lavcopts','acodec=mp3:abitrate=64','-ovc','xvid','-xvidencopts','bitrate=600','-of','avi','-o',path2]
+	args=['mencoder',path,'oac','lavc','-lavcopts','acodec=mp3:abitrate=64','-ovc','xvid','-xvidencopts','bitrate=600','-of','avi','-o',path2]
 	p = subprocess.check_call(args)
 	return path2
 
@@ -48,37 +52,38 @@ def checkbps(path): #查看视频的码率
 	return kbps/1000 #因为返回的结果单位不为K 
 	
 
+def main():
+	mkv
+	conn=MySQLdb.connect(host="localhost",user="root",passwd="wukong",db="video")
+	cursor = conn.cursor()
+	sql= "select * from covert"
+	n= cursor.execute(sql)
+	for i in cursor.fetchall():
+		path = i[1]
+		path2 = processFLV(path)
+		f = open(path2,'rb')
+		h = hashlib.md5()
+		h.update(f.read())
+		hash_value = h. hexdigest()
 
-conn=MySQLdb.connect(host="localhost",user="root",passwd="wukong",db="video")
-cursor = conn.cursor()
-sql= "select * from covert"
-n= cursor.execute(sql)
-for i in cursor.fetchall():
-	path = i[1]
-	path2 = processFLV(path)
-	f = open(path2,'rb')
-	h = hashlib.md5()
-	h.update(f.read())
-	hash_value = h. hexdigest()
+		#更新带转换视频的信息状态
+		sql2= "update  covert set state = " + "1" +" where id ="+str(i[0])
+		#print sql2
+		cursor.execute(sql2)
 
-	#更新带转换视频的信息状态
-	sql2= "update  covert set state = " + "1" +" where id ="+str(i[0])
-	#print sql2
-	cursor.execute(sql2)
-
-	#将转码后的视频传到相应的服务器
-	args2 =['scp',path2,'root@192.168.0.106:/root/']
-	p = subprocess.check_call(args2)
+		#将转码后的视频传到相应的服务器
+		args2 =['scp',path2,'root@192.168.0.106:/root/']
+		p = subprocess.check_call(args2)
 
 
-	#更新视频库信息，增加转还后视频路径信息
-	sql2= "update video_h  set state = " + "1" +" where id ="+str(i[0])
-	cursor.execute(sql2)
-	sql2= "update video_h  set path2 = '"+ path2 +"' where id ="+str(i[0])
-	print sql2
-	cursor.execute(sql2)
-	sql2= "update video_h  set hash_value = '"+ hash_value +"' where id ="+str(i[0])
-	cursor.execute(sql2)
+		#更新视频库信息，增加转还后视频路径信息
+		sql2= "update video_h  set state = " + "1" +" where id ="+str(i[0])
+		cursor.execute(sql2)
+		sql2= "update video_h  set path2 = '"+ path2 +"' where id ="+str(i[0])
+		print sql2
+		cursor.execute(sql2)
+		sql2= "update video_h  set hash_value = '"+ hash_value +"' where id ="+str(i[0])
+		cursor.execute(sql2)
 
 
 cursor.close()
